@@ -1,8 +1,24 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+//server components
 import Link from 'next/link';
-import { getAdSlots } from '@/lib/api';
+
+interface Publisher {
+  id: string;
+  name: string;
+}
+
+interface AdSlot {
+  id: string;
+  name: string;
+  type: 'DISPLAY' | 'VIDEO' | 'NATIVE' | 'NEWSLETTER' | 'PODCAST';
+  description?: string;
+  isAvailable: boolean;
+  basePrice: number | string;
+  publisher?: Publisher;
+}
+
+interface AdSlotGridProps {
+  query: string;
+}
 
 const typeColors: Record<string, string> = {
   DISPLAY: 'bg-blue-100 text-blue-700',
@@ -11,30 +27,28 @@ const typeColors: Record<string, string> = {
   PODCAST: 'bg-orange-100 text-orange-700',
 };
 
-export function AdSlotGrid() {
-  const [adSlots, setAdSlots] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+async function getAdSlots(query: string): Promise<AdSlot[]> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291/api';
 
-  useEffect(() => {
-    getAdSlots()
-      .then(setAdSlots)
-      .catch(() => setError('Failed to load ad slots'))
-      .finally(() => setLoading(false));
-  }, []);
+  // fetch data
+  const res = await fetch(`${baseUrl}/ad-slots?${query}`, {
+    cache: 'no-store',
+  });
 
-  if (loading) {
-    return <div className="py-12 text-center text-[--color-muted]">Loading marketplace...</div>;
+  if (!res.ok) {
+    throw new Error('Failed to fetch ad slots');
   }
 
-  if (error) {
-    return <div className="rounded border border-red-200 bg-red-50 p-4 text-red-600">{error}</div>;
-  }
+  return res.json();
+}
+
+export async function AdSlotGrid({ query }: AdSlotGridProps) {
+  const adSlots = await getAdSlots(query);
 
   if (adSlots.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-[--color-border] p-12 text-center text-[--color-muted]">
-        No ad slots available at the moment.
+        No ad slots match your filters.
       </div>
     );
   }
