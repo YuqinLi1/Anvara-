@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
+import { authMiddleware, type AuthRequest } from '../auth.js'; // import middleware
 
 const router: IRouter = Router();
 
@@ -15,20 +16,24 @@ router.post('/login', async (_req: Request, res: Response) => {
 });
 
 // GET /api/auth/me - Get current user (for API clients)
-router.get('/me', async (req: Request, res: Response) => {
+router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   // TODO: Challenge 3 - Implement auth middleware to validate session
   // For now, return unauthorized
-  res.status(401).json({ error: 'Not authenticated' });
+  // res.status(401).json({ error: 'Not authenticated' });
+  // authMiddleware runs first, req.user is guaranteed to exist here
+  res.json({
+    user: req.user,
+  });
 });
 
 // GET /api/auth/role/:userId - Get user role based on Sponsor/Publisher records
-router.get('/role/:userId', async (req: Request, res: Response) => {
+router.get('/role/:userId', async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
 
     // Check if user is a sponsor
     const sponsor = await prisma.sponsor.findUnique({
-      where: { userId },
+      where: { userId: userId as string },
       select: { id: true, name: true },
     });
 
@@ -39,7 +44,7 @@ router.get('/role/:userId', async (req: Request, res: Response) => {
 
     // Check if user is a publisher
     const publisher = await prisma.publisher.findUnique({
-      where: { userId },
+      where: { userId: userId as string },
       select: { id: true, name: true },
     });
 
