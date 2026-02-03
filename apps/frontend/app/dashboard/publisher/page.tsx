@@ -2,7 +2,6 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { AdSlotList } from './components/ad-slot-list';
 import { OptimisticAdSlotContainer } from './components/optimistic-ad-slot-container';
 
 async function getInitialAdSlots(publisherId: string) {
@@ -11,6 +10,14 @@ async function getInitialAdSlots(publisherId: string) {
     cache: 'no-store', // fetch data
   });
   return res.ok ? res.json() : [];
+}
+
+async function getPublisherStats(publisherId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291/api';
+  const res = await fetch(`${baseUrl}/publishers/${publisherId}/stats`, {
+    cache: 'no-store',
+  });
+  return res.ok ? res.json() : { totalRevenue: 0, activeSlots: 0, avgPrice: 0 };
 }
 
 export default async function PublisherDashboard() {
@@ -28,9 +35,29 @@ export default async function PublisherDashboard() {
     redirect('/');
   }
 
-  const initialAdSlots = await getInitialAdSlots(roleData.publisherId);
+  const [stats, initialAdSlots] = await Promise.all([
+    getPublisherStats(roleData.publisherId),
+    getInitialAdSlots(roleData.publisherId),
+  ]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-6">
+      {/* Revenue Overview Section */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <p className="text-sm font-medium text-[--color-muted]">Total Revenue</p>
+          <h2 className="mt-2 text-3xl font-bold">${stats.totalRevenue.toLocaleString()}</h2>
+        </div>
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <p className="text-sm font-medium text-[--color-muted]">Active Ad Slots</p>
+          <h2 className="mt-2 text-3xl font-bold">{stats.activeSlots}</h2>
+        </div>
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <p className="text-sm font-medium text-[--color-muted]">Avg. Monthly Price</p>
+          <h2 className="mt-2 text-3xl font-bold">${stats.avgPrice.toLocaleString()}</h2>
+        </div>
+      </div>
+
       <OptimisticAdSlotContainer
         initialAdSlots={initialAdSlots}
         publisherId={roleData.publisherId}

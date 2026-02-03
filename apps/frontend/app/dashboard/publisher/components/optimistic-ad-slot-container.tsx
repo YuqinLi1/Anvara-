@@ -1,9 +1,9 @@
 'use client';
 
-import { useOptimistic, useTransition } from 'react';
+import { useOptimistic, useTransition, useState } from 'react';
 import { AdSlotCard } from './ad-slot-card';
-import { CreateAdSlotButton } from './create-ad-slot-button';
-import { createAdSlotAction, deleteAdSlotAction } from '@/app/actions/ad-slots';
+import { CreateAdSlotForm } from './create-ad-slot-form'; // New Component
+import { deleteAdSlotAction } from '@/app/actions/ad-slots';
 
 export function OptimisticAdSlotContainer({
   initialAdSlots,
@@ -13,32 +13,25 @@ export function OptimisticAdSlotContainer({
   publisherId: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // create delete
   const [optimisticAdSlots, updateAdSlots] = useOptimistic(
     initialAdSlots,
-    (state, { action, payload }: { action: 'CREATE' | 'DELETE'; payload: any }) => {
+    (state, { action, payload }: { action: 'CREATE' | 'DELETE' | 'UPDATE'; payload: any }) => {
       if (action === 'CREATE') {
         return [{ ...payload, id: 'temp-' + Date.now(), isAvailable: true }, ...state];
       }
       if (action === 'DELETE') {
         return state.filter((slot) => slot.id !== payload);
       }
+      if (action === 'UPDATE') {
+        return state.map((slot: any) =>
+          slot.id === payload.id ? { ...slot, ...payload.data } : slot
+        );
+      }
       return state;
     }
   );
-
-  const handleCreate = async (formData: FormData) => {
-    const newSlot = {
-      name: formData.get('name'),
-      type: formData.get('type'),
-      basePrice: Number(formData.get('basePrice')),
-    };
-    startTransition(async () => {
-      updateAdSlots({ action: 'CREATE', payload: newSlot });
-      await createAdSlotAction(formData);
-    });
-  };
 
   const handleDelete = async (slotId: string) => {
     startTransition(async () => {
@@ -51,18 +44,34 @@ export function OptimisticAdSlotContainer({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">My Ad Slots</h1>
-        <CreateAdSlotButton
-          publisherId={publisherId}
-          onAction={handleCreate}
-          isPending={isPending}
-        />
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="rounded-lg bg-black px-4 py-2 text-white text-sm font-medium"
+        >
+          + New Ad Slot
+        </button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {optimisticAdSlots.map((slot) => (
-          <AdSlotCard key={slot.id} adSlot={slot} onDelete={() => handleDelete(slot.id)} />
+          <AdSlotCard
+            key={slot.id}
+            adSlot={slot}
+            onDelete={() => handleDelete(slot.id)}
+            // Updates will be handled by a similar modal pattern in the card
+            onUpdate={() => {}}
+          />
         ))}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-xl font-bold">Create Ad Slot</h2>
+            <CreateAdSlotForm publisherId={publisherId} onSuccess={() => setIsModalOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

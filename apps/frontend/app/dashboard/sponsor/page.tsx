@@ -2,8 +2,6 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { CampaignList } from './components/campaign-list';
-import { CreateCampaignButton } from './components/create-campaign-button';
 import { OptimisticCampaignContainer } from './components/optimistic-campaign-container';
 
 interface PageProps {
@@ -12,7 +10,7 @@ interface PageProps {
 
 async function getCampaigns(sponsorId: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/campaigns?sponsorId=${sponsorId}`, {
-    cache: 'no-store',
+    cache: 'no-store', // Ensures fresh data on every request
   });
   return res.ok ? res.json() : [];
 }
@@ -26,32 +24,26 @@ export default async function SponsorDashboard({ searchParams }: PageProps) {
     redirect('/login');
   }
 
-  // Await searchParams and get role data
+  // Await searchParams and get role data in parallel
   const [params, roleData] = await Promise.all([searchParams, getUserRole(session.user.id)]);
 
-  // Verify user has 'sponsor' role and ID
+  // Verify user has 'sponsor' role and associated sponsorId
   if (roleData.role !== 'sponsor' || !roleData.sponsorId) {
     redirect('/');
   }
 
-  // Initial fetch on the server
+  // Initial fetch on the server to pass to the client container
   const initialCampaigns = await getCampaigns(roleData.sponsorId);
 
-  const sort = typeof params.sort === 'string' ? params.sort : 'createdAt_desc';
-  const page = typeof params.page === 'string' ? params.page : '1';
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Campaigns</h1>
-        {/*  Add CreateCampaignButton here */}
-        <OptimisticCampaignContainer
-          initialCampaigns={initialCampaigns}
-          sponsorId={roleData.sponsorId}
-        />
-      </div>
-
-      <CampaignList sponsorId={roleData.sponsorId} sort={sort} page={page} />
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      {/* OptimisticCampaignContainer now handles the "Create" button, 
+          the "Edit/Delete" cards, and the optimistic state management 
+      */}
+      <OptimisticCampaignContainer
+        initialCampaigns={initialCampaigns}
+        sponsorId={roleData.sponsorId}
+      />
     </div>
   );
 }

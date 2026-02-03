@@ -10,6 +10,7 @@ interface AdSlotCardProps {
     isAvailable: boolean;
   };
   onDelete: () => void;
+  onUpdate: (formData: FormData) => void;
 }
 
 const typeColors: Record<string, string> = {
@@ -19,9 +20,19 @@ const typeColors: Record<string, string> = {
   PODCAST: 'bg-orange-100 text-orange-700',
 };
 
-export function AdSlotCard({ adSlot, onDelete }: AdSlotCardProps) {
+export function AdSlotCard({ adSlot, onDelete, onUpdate }: AdSlotCardProps) {
+  const handleToggle = () => {
+    const formData = new FormData();
+    formData.append('name', adSlot.name);
+    formData.append('type', adSlot.type);
+    formData.append('basePrice', String(adSlot.basePrice));
+    formData.append('isAvailable', String(!adSlot.isAvailable));
+
+    onUpdate(formData);
+  };
+
   return (
-    <div className="rounded-lg border border-[--color-border] p-4">
+    <div className="group relative rounded-lg border border-[--color-border] p-4 transition-all hover:shadow-md">
       <button
         onClick={(e) => {
           e.preventDefault();
@@ -29,7 +40,7 @@ export function AdSlotCard({ adSlot, onDelete }: AdSlotCardProps) {
             onDelete();
           }
         }}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all z-10"
         title="Delete Slot"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -42,7 +53,7 @@ export function AdSlotCard({ adSlot, onDelete }: AdSlotCardProps) {
         </svg>
       </button>
 
-      <div className="mb-2 flex items-start justify-between">
+      <div className="mb-2 flex items-start justify-between pr-6">
         <h3 className="font-semibold">{adSlot.name}</h3>
         <span className={`rounded px-2 py-0.5 text-xs ${typeColors[adSlot.type] || 'bg-gray-100'}`}>
           {adSlot.type}
@@ -55,16 +66,15 @@ export function AdSlotCard({ adSlot, onDelete }: AdSlotCardProps) {
 
       <div className="flex items-center justify-between">
         <span
-          className={`text-sm ${adSlot.isAvailable ? 'text-green-600' : 'text-[--color-muted]'}`}
+          className={`text-sm font-medium ${adSlot.isAvailable ? 'text-green-600' : 'text-gray-400'}`}
         >
-          {adSlot.isAvailable ? 'Available' : 'Booked'}
+          {adSlot.isAvailable ? '● Available' : '○ Booked'}
         </span>
         <span className="font-semibold text-[--color-primary]">
           ${Number(adSlot.basePrice).toLocaleString()}/mo
         </span>
       </div>
 
-      {/* Add edit/toggle availability buttons */}
       <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
         <button
           onClick={() => alert('Edit modal logic goes here')}
@@ -73,7 +83,7 @@ export function AdSlotCard({ adSlot, onDelete }: AdSlotCardProps) {
           Edit
         </button>
         <button
-          onClick={() => alert('Toggle availability logic goes here')}
+          onClick={handleToggle}
           className="text-xs font-medium px-2 py-1 border rounded hover:bg-gray-50 transition-colors"
         >
           {adSlot.isAvailable ? 'Mark as Booked' : 'Mark as Available'}

@@ -1,7 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { EditCampaignForm } from './edit-campaign-form'; // Import the new form
 
+/**
+ * Challenge 5 Requirement: Edit functionality
+ */
 interface CampaignCardProps {
   campaign: {
     id: string;
@@ -13,8 +18,8 @@ interface CampaignCardProps {
     startDate: string;
     endDate: string;
   };
-
   onDelete: () => void;
+ 
 }
 
 const statusColors: Record<string, string> = {
@@ -25,11 +30,15 @@ const statusColors: Record<string, string> = {
 };
 
 export function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const progress =
     campaign.budget > 0 ? (Number(campaign.spent) / Number(campaign.budget)) * 100 : 0;
 
   return (
-    <div className="rounded-lg border border-[--color-border] p-4">
+    /**
+     *  Added 'group relative'
+     */
+    <div className="group relative rounded-lg border border-[--color-border] p-4 transition-all hover:shadow-md">
       {/* Delete Button (Top Right) */}
       <button
         onClick={(e) => {
@@ -38,7 +47,9 @@ export function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
             onDelete();
           }
         }}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-all"
+        
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-all z-10"
+        title="Delete Campaign"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -49,7 +60,8 @@ export function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
           />
         </svg>
       </button>
-      <div className="mb-2 flex items-start justify-between">
+
+      <div className="mb-2 flex items-start justify-between pr-6">
         <h3 className="font-semibold">{campaign.name}</h3>
         <span
           className={`rounded px-2 py-0.5 text-xs ${statusColors[campaign.status] || 'bg-gray-100'}`}
@@ -77,13 +89,12 @@ export function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-50">
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
         <div className="text-[10px] text-[--color-muted] uppercase tracking-wider">
           {new Date(campaign.startDate).toLocaleDateString()} -{' '}
           {new Date(campaign.endDate).toLocaleDateString()}
         </div>
 
-        {/* Action Buttons: View and Edit */}
         <div className="flex gap-2">
           <Link
             href={`/dashboard/sponsor/campaigns/${campaign.id}`}
@@ -92,13 +103,36 @@ export function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
             View
           </Link>
           <button
-            onClick={() => alert('Edit modal logic goes here')}
+          
+            onClick={() => setIsEditModalOpen(true)}
             className="px-3 py-1 text-xs font-medium bg-gray-900 text-white rounded hover:bg-gray-800 transition-colors"
           >
             Edit
           </button>
         </div>
       </div>
+
+      {/* Edit Modal implementation */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Campaign</h2>
+              <button 
+                onClick={() => setIsEditModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {/* Integrated the Edit Form component */}
+            <EditCampaignForm 
+              campaign={campaign} 
+              onSuccess={() => setIsEditModalOpen(false)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
