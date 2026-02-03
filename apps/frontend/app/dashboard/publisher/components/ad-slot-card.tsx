@@ -9,6 +9,7 @@ interface AdSlotCardProps {
     basePrice: number;
     isAvailable: boolean;
   };
+  onDelete: () => void;
 }
 
 const typeColors: Record<string, string> = {
@@ -18,9 +19,29 @@ const typeColors: Record<string, string> = {
   PODCAST: 'bg-orange-100 text-orange-700',
 };
 
-export function AdSlotCard({ adSlot }: AdSlotCardProps) {
+export function AdSlotCard({ adSlot, onDelete }: AdSlotCardProps) {
   return (
     <div className="rounded-lg border border-[--color-border] p-4">
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          if (confirm('Are you sure you want to delete this ad slot?')) {
+            onDelete();
+          }
+        }}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
+        title="Delete Slot"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          />
+        </svg>
+      </button>
+
       <div className="mb-2 flex items-start justify-between">
         <h3 className="font-semibold">{adSlot.name}</h3>
         <span className={`rounded px-2 py-0.5 text-xs ${typeColors[adSlot.type] || 'bg-gray-100'}`}>
@@ -43,7 +64,21 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
         </span>
       </div>
 
-      {/* TODO: Add edit/toggle availability buttons */}
+      {/* Add edit/toggle availability buttons */}
+      <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
+        <button
+          onClick={() => alert('Edit modal logic goes here')}
+          className="text-xs font-medium px-2 py-1 border rounded hover:bg-gray-50 transition-colors"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => alert('Toggle availability logic goes here')}
+          className="text-xs font-medium px-2 py-1 border rounded hover:bg-gray-50 transition-colors"
+        >
+          {adSlot.isAvailable ? 'Mark as Booked' : 'Mark as Available'}
+        </button>
+      </div>
     </div>
   );
 }

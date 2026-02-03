@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 interface CampaignCardProps {
   campaign: {
     id: string;
@@ -11,6 +13,8 @@ interface CampaignCardProps {
     startDate: string;
     endDate: string;
   };
+
+  onDelete: () => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -20,12 +24,31 @@ const statusColors: Record<string, string> = {
   COMPLETED: 'bg-blue-100 text-blue-700',
 };
 
-export function CampaignCard({ campaign }: CampaignCardProps) {
+export function CampaignCard({ campaign, onDelete }: CampaignCardProps) {
   const progress =
     campaign.budget > 0 ? (Number(campaign.spent) / Number(campaign.budget)) * 100 : 0;
 
   return (
     <div className="rounded-lg border border-[--color-border] p-4">
+      {/* Delete Button (Top Right) */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          if (confirm('Are you sure you want to delete this campaign?')) {
+            onDelete();
+          }
+        }}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-all"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          />
+        </svg>
+      </button>
       <div className="mb-2 flex items-start justify-between">
         <h3 className="font-semibold">{campaign.name}</h3>
         <span
@@ -54,12 +77,28 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
         </div>
       </div>
 
-      <div className="text-xs text-[--color-muted]">
-        {new Date(campaign.startDate).toLocaleDateString()} -{' '}
-        {new Date(campaign.endDate).toLocaleDateString()}
-      </div>
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-50">
+        <div className="text-[10px] text-[--color-muted] uppercase tracking-wider">
+          {new Date(campaign.startDate).toLocaleDateString()} -{' '}
+          {new Date(campaign.endDate).toLocaleDateString()}
+        </div>
 
-      {/* TODO: Add edit/view buttons */}
+        {/* Action Buttons: View and Edit */}
+        <div className="flex gap-2">
+          <Link
+            href={`/dashboard/sponsor/campaigns/${campaign.id}`}
+            className="px-3 py-1 text-xs font-medium border rounded hover:bg-gray-50 transition-colors"
+          >
+            View
+          </Link>
+          <button
+            onClick={() => alert('Edit modal logic goes here')}
+            className="px-3 py-1 text-xs font-medium bg-gray-900 text-white rounded hover:bg-gray-800 transition-colors"
+          >
+            Edit
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
