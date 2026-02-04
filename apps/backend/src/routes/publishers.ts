@@ -52,4 +52,38 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/:id/stats', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+
+    const [adSlots, placements] = await Promise.all([
+      prisma.adSlot.findMany({
+        where: { publisherId: id },
+      }),
+      prisma.placement.findMany({
+        where: {
+          publisherId: id,
+          status: 'ACTIVE',
+        },
+        select: { agreedPrice: true },
+      }),
+    ]);
+    const activeSlots = adSlots.filter((slot) => slot.isAvailable).length;
+    const totalSlots = adSlots.length;
+    const avgPrice =
+      totalSlots > 0
+        ? adSlots.reduce((sum, slot) => sum + Number(slot.basePrice), 0) / totalSlots
+        : 0;
+
+    const totalRevenue = placements.reduce((sum, p) => sum + Number(p.agreedPrice), 0);
+    res.json({
+      totalRevenue: totalRevenue,
+      activeSlots: activeSlots,
+      avgPrice: Math.round(avgPrice),
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 export default router;
