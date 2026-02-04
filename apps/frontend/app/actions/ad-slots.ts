@@ -17,9 +17,6 @@ export async function createAdSlotAction(prevState: any, formData: FormData) {
   const token = cookieStore.get('better-auth.session_token')?.value;
 
   const allCookies = cookieStore.getAll().map((c) => c.name);
-  console.log('🍪 Available Cookies:', allCookies);
-
-  console.log('🔑 Extracted Token:', token);
 
   if (!token) {
     return { success: false, error: 'Authentication failed: No session token found in cookies.' };

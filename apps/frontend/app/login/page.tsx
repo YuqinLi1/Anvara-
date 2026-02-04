@@ -96,9 +96,11 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-[--color-primary] px-4 py-2 font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="mt-4 w-full rounded-md bg-blue-600 py-3 px-4 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-gray-400"
           >
-            {loading ? 'Logging in...' : `Login as ${role === 'sponsor' ? 'Sponsor' : 'Publisher'}`}
+            {loading
+              ? 'Logging in...'
+              : `Sign in as ${role === 'sponsor' ? 'Sponsor' : 'Publisher'}`}
           </button>
         </form>
       </div>

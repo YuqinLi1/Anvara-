@@ -13,7 +13,7 @@ async function getInitialAdSlots(publisherId: string) {
 }
 
 async function getPublisherStats(publisherId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291/api';
+  const baseUrl = 'http://127.0.0.1:4291/api';
   const res = await fetch(`${baseUrl}/publishers/${publisherId}/stats`, {
     cache: 'no-store',
   });
@@ -31,6 +31,7 @@ export default async function PublisherDashboard() {
 
   // Verify user has 'publisher' role
   const roleData = await getUserRole(session.user.id);
+
   if (roleData.role !== 'publisher' || !roleData.publisherId) {
     redirect('/');
   }
