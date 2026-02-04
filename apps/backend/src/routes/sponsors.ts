@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
+import { authMiddleware, roleMiddleware, type AuthRequest } from '../auth.js';
 
 const router: IRouter = Router();
 
@@ -53,7 +54,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/sponsors - Create new sponsor
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { name, email, website, logo, description, industry } = req.body;
 
@@ -63,7 +64,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     const sponsor = await prisma.sponsor.create({
-      data: { name, email, website, logo, description, industry },
+      data: { name, email, website, logo, description, industry, userId: req.user?.id },
     });
 
     res.status(201).json(sponsor);
@@ -75,5 +76,49 @@ router.post('/', async (req: Request, res: Response) => {
 
 // TODO: Add PUT /api/sponsors/:id endpoint
 // Update sponsor details
+router.put(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['SPONSOR']),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { name, email, website, logo, description, industry, isActive } = req.body;
+
+      // 1. Verify Ownership: The sponsor record must belong to the logged-in user
+      const existingSponsor = await prisma.sponsor.findUnique({
+        where: { id: id as string },
+        select: { userId: true },
+      });
+
+      if (!existingSponsor) {
+        return res.status(404).json({ error: 'Sponsor profile not found' });
+      }
+
+      if (existingSponsor.userId !== req.user?.id) {
+        return res.status(403).json({ error: 'Unauthorized: You do not own this profile' });
+      }
+
+      // 2. Perform the Update
+      const updatedSponsor = await prisma.sponsor.update({
+        where: { id: id as string },
+        data: {
+          ...(name && { name }),
+          ...(email && { email }),
+          ...(website !== undefined && { website }),
+          ...(logo !== undefined && { logo }),
+          ...(description !== undefined && { description }),
+          ...(industry !== undefined && { industry }),
+          ...(isActive !== undefined && { isActive }),
+        },
+      });
+
+      res.json(updatedSponsor);
+    } catch (error) {
+      console.error('Error updating sponsor:', error);
+      res.status(500).json({ error: 'Failed to update sponsor details' });
+    }
+  }
+);
 
 export default router;

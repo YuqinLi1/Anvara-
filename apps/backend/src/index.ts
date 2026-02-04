@@ -1,6 +1,8 @@
 import express, { type Application } from 'express';
 import cors from 'cors';
 import routes from './routes/index.js';
+// import rate limiting
+import rateLimit from 'express-rate-limit';
 
 const app: Application = express();
 const PORT = process.env.BACKEND_PORT || 4291;
@@ -8,7 +10,22 @@ const PORT = process.env.BACKEND_PORT || 4291;
 // Middleware
 // FIXME: CORS is configured with defaults - for production, specify allowed origins
 // TODO: Add rate limiting middleware to prevent abuse (e.g., express-rate-limit)
-app.use(cors());
+// app.use(cors());
+const corsOptions = {
+  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3847'].filter(
+    Boolean
+  ),
+  credentials: true, // allow better Auth pass session cookie
+};
+app.use(cors(corsOptions));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 100, // 100 requests limit
+  message: { error: 'Too many requests, please try again later.' },
+});
+app.use('/api/', limiter);
+
 app.use(express.json());
 
 // Mount all API routes

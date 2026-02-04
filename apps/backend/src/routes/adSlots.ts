@@ -62,8 +62,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/ad-slots - Create new ad slot
-// BUG: This accepts 'dimensions' and 'pricingModel' fields that don't exist in Prisma schema
-// BUG: No input validation for basePrice (could be negative or zero)
+
 router.post(
   '/',
   authMiddleware,
@@ -85,10 +84,6 @@ router.post(
         res.status(400).json({ error: 'basePrice must be a positive number' });
         return;
       }
-
-      // TODO: Add authentication middleware to verify user owns publisherId
-      // TODO: Validate that basePrice is positive
-      // TODO: Validate that 'type' is valid enum value
 
       const adSlot = await prisma.adSlot.create({
         data: {
@@ -192,7 +187,7 @@ router.post('/:id/unbook', async (req: Request, res: Response) => {
   }
 });
 
-// TODO: Add PUT /api/ad-slots/:id endpoint
+//PUT /api/ad-slots/:id endpoint
 router.put('/:id', verifyPublisherOwnership, async (req: Request, res: Response) => {
   try {
     const id = getParam(req.params.id);
@@ -223,7 +218,7 @@ router.put('/:id', verifyPublisherOwnership, async (req: Request, res: Response)
   }
 });
 
-// TODO: Add DELETE /api/ad-slots/:id endpoint
+//DELETE /api/ad-slots/:id endpoint
 router.delete('/:id', verifyPublisherOwnership, async (req: Request, res: Response) => {
   try {
     const id = getParam(req.params.id);

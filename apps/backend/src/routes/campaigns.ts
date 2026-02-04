@@ -1,6 +1,9 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
 import { getParam } from '../utils/helpers.js';
+// add middleware
+import { authMiddleware, roleMiddleware, type AuthRequest } from '../auth.js';
+import { verifySponsorOwnership } from '../middleware/sponsorOwnership.js';
 
 const router: IRouter = Router();
 
@@ -59,54 +62,101 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/campaigns - Create new campaign
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const {
-      name,
-      description,
-      budget,
-      cpmRate,
-      cpcRate,
-      startDate,
-      endDate,
-      targetCategories,
-      targetRegions,
-      sponsorId,
-    } = req.body;
-
-    if (!name || !budget || !startDate || !endDate || !sponsorId) {
-      res.status(400).json({
-        error: 'Name, budget, startDate, endDate, and sponsorId are required',
-      });
-      return;
-    }
-
-    const campaign = await prisma.campaign.create({
-      data: {
+router.post(
+  '/',
+  authMiddleware,
+  roleMiddleware(['SPONSOR']),
+  verifySponsorOwnership,
+  async (req: Request, res: Response) => {
+    try {
+      const {
         name,
         description,
         budget,
         cpmRate,
         cpcRate,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        targetCategories: targetCategories || [],
-        targetRegions: targetRegions || [],
+        startDate,
+        endDate,
+        targetCategories,
+        targetRegions,
         sponsorId,
-      },
-      include: {
-        sponsor: { select: { id: true, name: true } },
-      },
-    });
+      } = req.body;
 
-    res.status(201).json(campaign);
-  } catch (error) {
-    console.error('Error creating campaign:', error);
-    res.status(500).json({ error: 'Failed to create campaign' });
+      if (!name || !budget || !startDate || !endDate || !sponsorId) {
+        res.status(400).json({
+          error: 'Name, budget, startDate, endDate, and sponsorId are required',
+        });
+        return;
+      }
+
+      const campaign = await prisma.campaign.create({
+        data: {
+          name,
+          description,
+          budget: Number(budget),
+          cpmRate: cpmRate ? Number(cpmRate) : null,
+          cpcRate: cpcRate ? Number(cpcRate) : null,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          targetCategories: targetCategories || [],
+          targetRegions: targetRegions || [],
+          sponsorId,
+        },
+        include: {
+          sponsor: { select: { id: true, name: true } },
+        },
+      });
+
+      res.status(201).json(campaign);
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      res.status(500).json({ error: 'Failed to create campaign' });
+    }
   }
-});
+);
 
 // TODO: Add PUT /api/campaigns/:id endpoint
 // Update campaign details (name, budget, dates, status, etc.)
+router.put(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['SPONSOR']),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const id = getParam(req.params.id);
+      const { name, description, budget, status, startDate, endDate } = req.body;
+
+      // First, verify the campaign belongs to this user
+      const existingCampaign = await prisma.campaign.findUnique({
+        where: { id },
+        select: { sponsorId: true },
+      });
+
+      if (!existingCampaign) {
+        return res.status(404).json({ error: 'Campaign not found' });
+      }
+
+      if (existingCampaign.sponsorId !== req.user?.sponsorId) {
+        return res.status(403).json({ error: 'Unauthorized to edit this campaign' });
+      }
+
+      const updatedCampaign = await prisma.campaign.update({
+        where: { id },
+        data: {
+          ...(name && { name }),
+          ...(description !== undefined && { description }),
+          ...(budget && { budget: Number(budget) }),
+          ...(status && { status }),
+          ...(startDate && { startDate: new Date(startDate) }),
+          ...(endDate && { endDate: new Date(endDate) }),
+        },
+      });
+
+      res.json(updatedCampaign);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update campaign' });
+    }
+  }
+);
 
 export default router;

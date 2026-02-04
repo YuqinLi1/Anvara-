@@ -38,10 +38,12 @@ export async function authMiddleware(
     return res.status(401).json({ error: 'Unauthorized: No session token found' });
   }
 
+  console.log('🔑 Backend received token:', token);
+
   try {
     // 2 & 3. Validate token and look up user with profiles in the database
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { id: token },
       include: {
         user: {
           include: { sponsor: true, publisher: true },
