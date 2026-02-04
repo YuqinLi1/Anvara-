@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { EditAdSlotForm } from './edit-ad-slot-form';
+
 interface AdSlotCardProps {
   adSlot: {
     id: string;
@@ -21,6 +24,8 @@ const typeColors: Record<string, string> = {
 };
 
 export function AdSlotCard({ adSlot, onDelete, onUpdate }: AdSlotCardProps) {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const handleToggle = () => {
     const formData = new FormData();
     formData.append('name', adSlot.name);
@@ -77,7 +82,7 @@ export function AdSlotCard({ adSlot, onDelete, onUpdate }: AdSlotCardProps) {
 
       <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
         <button
-          onClick={() => alert('Edit modal logic goes here')}
+          onClick={() => setIsEditModalOpen(true)}
           className="text-xs font-medium px-2 py-1 border rounded hover:bg-gray-50 transition-colors"
         >
           Edit
@@ -89,6 +94,17 @@ export function AdSlotCard({ adSlot, onDelete, onUpdate }: AdSlotCardProps) {
           {adSlot.isAvailable ? 'Mark as Booked' : 'Mark as Available'}
         </button>
       </div>
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Edit Ad Slot</h2>
+              <button onClick={() => setIsEditModalOpen(false)}>✕</button>
+            </div>
+            <EditAdSlotForm adSlot={adSlot} onSuccess={() => setIsEditModalOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

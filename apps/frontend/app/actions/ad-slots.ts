@@ -4,14 +4,26 @@ import { string } from 'better-auth';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291/api';
+// const API_URL = process.env.NEXT_PUBLIC_API_URL
+//   ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+//   : 'http://localhost:4291/api';
 
+const API_URL = 'http://127.0.0.1:4291/api';
 /**
  * Create Ad Slot Server Action
  */
 export async function createAdSlotAction(prevState: any, formData: FormData) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('better-auth.session-token')?.value;
+  const token = cookieStore.get('better-auth.session_token')?.value;
+
+  const allCookies = cookieStore.getAll().map((c) => c.name);
+  console.log('🍪 Available Cookies:', allCookies);
+
+  console.log('🔑 Extracted Token:', token);
+
+  if (!token) {
+    return { success: false, error: 'Authentication failed: No session token found in cookies.' };
+  }
 
   const data = {
     name: formData.get('name'),
@@ -32,10 +44,12 @@ export async function createAdSlotAction(prevState: any, formData: FormData) {
   });
 
   if (!res.ok) {
-    return { success: false, error: 'Failed to create ad slot' };
+    const errorDetail = await res.json().catch(() => ({}));
+    console.error('❌ Backend Error Detail:', errorDetail);
+
+    return { success: false, error: errorDetail.message || 'Failed to create ad slot' };
   }
 
-  // Trigger cache revalidation for the publisher dashboard
   revalidatePath('/dashboard/publisher');
   return { success: true, error: null };
 }
@@ -45,7 +59,7 @@ export async function createAdSlotAction(prevState: any, formData: FormData) {
  */
 export async function deleteAdSlotAction(slotId: string) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('better-auth.session-token')?.value;
+  const token = cookieStore.get('better-auth.session_token')?.value;
 
   const res = await fetch(`${API_URL}/ad-slots/${slotId}`, {
     method: 'DELETE',
@@ -65,7 +79,7 @@ export async function deleteAdSlotAction(slotId: string) {
 
 export async function updateAdSlotAction(prevState: any, formData: FormData) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('better-auth.session-token')?.value;
+  const token = cookieStore.get('better-auth.session_token')?.value;
   const slotId = formData.get('id');
 
   const data = {
@@ -76,7 +90,7 @@ export async function updateAdSlotAction(prevState: any, formData: FormData) {
   };
 
   const res = await fetch(`${API_URL}/ad-slots/${slotId}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,

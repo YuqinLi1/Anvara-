@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { createAdSlotAction } from '@/app/actions/ad-slots';
 
 export function CreateAdSlotForm({
@@ -10,7 +11,10 @@ export function CreateAdSlotForm({
   publisherId: string;
   onSuccess: () => void;
 }) {
-  const [state, formAction] = useFormState(createAdSlotAction, { success: false, error: null });
+  const [state, formAction] = useActionState(createAdSlotAction, {
+    success: false,
+    error: null,
+  });
 
   if (state.success) onSuccess();
 
