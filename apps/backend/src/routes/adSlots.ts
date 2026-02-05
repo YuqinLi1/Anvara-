@@ -13,7 +13,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const adSlots = await prisma.adSlot.findMany({
       where: {
-        ...(publisherId && { publisherId: getParam(publisherId) }),
+        ...(publisherId && { publisherId: String(publisherId) }),
         ...(type && {
           type: type as string as 'DISPLAY' | 'VIDEO' | 'NATIVE' | 'NEWSLETTER' | 'PODCAST',
         }),
@@ -70,14 +70,10 @@ router.post(
   verifyPublisherOwnership,
   async (req: Request, res: Response) => {
     try {
-      const { name, description, type, dimensions, basePrice, pricingModel, publisherId } =
-        req.body;
+      const { name, description, type, basePrice, publisherId, position, width, height } = req.body;
 
-      if (!name || !type || !basePrice || !publisherId) {
-        res.status(400).json({
-          error: 'Name, type, basePrice, and publisherId are required',
-        });
-        return;
+      if (!name || !type || !basePrice || !publisherId || !position) {
+        return res.status(400).json({ error: 'Missing required fields' });
       }
       // input validation
       if (Number(basePrice) <= 0) {
@@ -90,13 +86,12 @@ router.post(
           name,
           description,
           type,
-          // dimensions, // BUG: This field doesn't exist in schema
-          // validates enum types and fixed bugs
-          width: dimensions?.width ? parseInt(dimensions.width) : null,
-          height: dimensions?.height ? parseInt(dimensions.height) : null,
+          position,
+          width: width ? parseInt(width) : null,
+          height: height ? parseInt(height) : null,
           basePrice: Number(basePrice),
-          // pricingModel: pricingModel || 'CPM', // BUG: This field doesn't exist in schema
           publisherId,
+          isAvailable: true,
         },
         include: {
           publisher: { select: { id: true, name: true } },
@@ -148,10 +143,6 @@ router.post('/:id/book', async (req: Request, res: Response) => {
       },
     });
 
-    // In a real app, you'd create a Placement record here
-    // For now, we just mark it as booked
-    console.log(`Ad slot ${id} booked by sponsor ${sponsorId}. Message: ${message || 'None'}`);
-
     res.json({
       success: true,
       message: 'Ad slot booked successfully!',
@@ -188,54 +179,67 @@ router.post('/:id/unbook', async (req: Request, res: Response) => {
 });
 
 //PUT /api/ad-slots/:id endpoint
-router.put('/:id', verifyPublisherOwnership, async (req: Request, res: Response) => {
-  try {
-    const id = getParam(req.params.id);
-    const { name, description, type, dimensions, basePrice, isAvailable } = req.body;
+router.put(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['PUBLISHER']),
+  verifyPublisherOwnership,
+  async (req: Request, res: Response) => {
+    try {
+      const id = getParam(req.params.id);
+      const { name, description, type, position, width, height, basePrice, isAvailable } = req.body;
 
-    const updatedSlot = await prisma.adSlot.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
-        ...(type && { type }),
-        ...(dimensions?.width && { width: parseInt(dimensions.width) }),
-        ...(dimensions?.height && { height: parseInt(dimensions.height) }),
-        ...(basePrice && { basePrice: Number(basePrice) }),
-        ...(isAvailable !== undefined && { isAvailable }),
-      },
-    });
+      const updatedSlot = await prisma.adSlot.update({
+        where: { id },
+        data: {
+          ...(name && { name }),
+          description: description !== undefined ? description : undefined,
+          ...(type && { type }),
+          position: position !== undefined ? position : undefined,
+          width: width !== undefined ? (width ? Number(width) : null) : undefined,
+          height: height !== undefined ? (height ? Number(height) : null) : undefined,
+          ...(basePrice && { basePrice: Number(basePrice) }),
+          ...(isAvailable !== undefined && { isAvailable: Boolean(isAvailable) }),
+        },
+      });
 
-    res.json(updatedSlot);
-  } catch (error) {
-    console.error('Error updating ad slot:', error);
-    // Handle Prisma's "Record not found" error
-    if ((error as any).code === 'P2025') {
-      res.status(404).json({ error: 'Ad slot not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to update ad slot' });
+      res.json(updatedSlot);
+    } catch (error) {
+      console.error('Error updating ad slot:', error);
+      // Handle Prisma's "Record not found" error
+      if ((error as any).code === 'P2025') {
+        res.status(404).json({ error: 'Ad slot not found' });
+      } else {
+        res.status(500).json({ error: 'Failed to update ad slot' });
+      }
     }
   }
-});
+);
 
 //DELETE /api/ad-slots/:id endpoint
-router.delete('/:id', verifyPublisherOwnership, async (req: Request, res: Response) => {
-  try {
-    const id = getParam(req.params.id);
+router.delete(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['PUBLISHER']),
+  verifyPublisherOwnership,
+  async (req: Request, res: Response) => {
+    try {
+      const id = getParam(req.params.id);
 
-    await prisma.adSlot.delete({
-      where: { id },
-    });
+      await prisma.adSlot.delete({
+        where: { id },
+      });
 
-    res.json({ success: true, message: 'Ad slot deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting ad slot:', error);
-    if ((error as any).code === 'P2025') {
-      res.status(404).json({ error: 'Ad slot not found' });
-    } else {
-      res.status(500).json({ error: 'Failed to delete ad slot' });
+      res.json({ success: true, message: 'Ad slot deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting ad slot:', error);
+      if ((error as any).code === 'P2025') {
+        res.status(404).json({ error: 'Ad slot not found' });
+      } else {
+        res.status(500).json({ error: 'Failed to delete ad slot' });
+      }
     }
   }
-});
+);
 
 export default router;

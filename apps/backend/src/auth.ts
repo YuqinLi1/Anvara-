@@ -29,6 +29,7 @@ export async function authMiddleware(
   // Better Auth will handle validation via headers
   // This is a placeholder for protected routes
   const authHeader = req.headers.authorization;
+
   const token = authHeader?.startsWith('Bearer ')
     ? authHeader.substring(7)
     : (req as any).cookies?.['better-auth.session-token'];
@@ -52,16 +53,21 @@ export async function authMiddleware(
     });
 
     // 5. Return 401 if session is invalid or expired
+    if (!session) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+
     if (!session || new Date() > session.expiresAt) {
       return res.status(401).json({ error: 'Unauthorized: Invalid or expired session' });
     }
 
     // 4. Attach user info, role, and profile IDs to req.user
+    const isSponsor = !!session.user.sponsor;
     req.user = {
       id: session.user.id,
       email: session.user.email,
       // Logic to determine role based on which record exists
-      role: session.user.publisher ? 'PUBLISHER' : 'SPONSOR',
+      role: isSponsor ? 'SPONSOR' : 'PUBLISHER',
       sponsorId: session.user.sponsor?.id,
       publisherId: session.user.publisher?.id,
     };

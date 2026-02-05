@@ -6,14 +6,15 @@ export const verifySponsorOwnership = async (
   res: Response,
   next: NextFunction
 ) => {
-  const user = req.user;
-  const sponsorId = req.body.sponsorId || req.params.sponsorId;
+  if (!req.user) {
+    console.error('verifySponsorOwnership: No user found on request object');
+    return res.status(401).json({ error: 'Authentication required' });
+  }
 
-  // Check if the user is a Sponsor and matches the ID provided in the request
-  if (!user || user.role !== 'SPONSOR' || (sponsorId && user.sponsorId !== sponsorId)) {
-    return res.status(403).json({
-      error: 'Forbidden: You do not have permission to manage this sponsor profile',
-    });
+  const userSponsorId = req.user.sponsorId;
+
+  if (!userSponsorId) {
+    return res.status(403).json({ error: 'User is not associated with any sponsor' });
   }
 
   next();

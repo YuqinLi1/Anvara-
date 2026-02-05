@@ -1,21 +1,21 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
 import { getParam } from '../utils/helpers.js';
-// add middleware
 import { authMiddleware, roleMiddleware, type AuthRequest } from '../auth.js';
 import { verifySponsorOwnership } from '../middleware/sponsorOwnership.js';
 
 const router: IRouter = Router();
 
 // GET /api/campaigns - List all campaigns
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authMiddleware, verifySponsorOwnership, async (req: AuthRequest, res: Response) => {
   try {
-    const { status, sponsorId } = req.query;
+    const { status } = req.query;
+    const sponsorId = req.user?.sponsorId;
 
     const campaigns = await prisma.campaign.findMany({
       where: {
         ...(status && { status: status as string as 'ACTIVE' | 'PAUSED' | 'COMPLETED' }),
-        ...(sponsorId && { sponsorId: getParam(sponsorId) }),
+        ...(sponsorId && { sponsorId: String(sponsorId) }),
       },
       include: {
         sponsor: { select: { id: true, name: true, logo: true } },
@@ -65,6 +65,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post(
   '/',
   authMiddleware,
+  verifySponsorOwnership,
   roleMiddleware(['SPONSOR']),
   verifySponsorOwnership,
   async (req: Request, res: Response) => {
@@ -121,10 +122,13 @@ router.put(
   '/:id',
   authMiddleware,
   roleMiddleware(['SPONSOR']),
+  verifySponsorOwnership,
   async (req: AuthRequest, res: Response) => {
     try {
       const id = getParam(req.params.id);
       const { name, description, budget, status, startDate, endDate } = req.body;
+
+      const userSponsorId = req.user?.sponsorId;
 
       // First, verify the campaign belongs to this user
       const existingCampaign = await prisma.campaign.findUnique({
@@ -155,6 +159,41 @@ router.put(
       res.json(updatedCampaign);
     } catch (error) {
       res.status(500).json({ error: 'Failed to update campaign' });
+    }
+  }
+);
+
+router.delete(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['SPONSOR']),
+  verifySponsorOwnership,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const id = getParam(req.params.id);
+      const userSponsorId = req.user?.sponsorId;
+
+      const campaign = await prisma.campaign.findUnique({
+        where: { id },
+        select: { sponsorId: true }, //
+      });
+
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campaign not found' }); //
+      }
+
+      if (campaign.sponsorId !== userSponsorId) {
+        return res.status(403).json({ error: 'Unauthorized to delete this campaign' }); //
+      }
+
+      await prisma.campaign.delete({
+        where: { id },
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Delete Error:', error);
+      res.status(500).json({ error: 'Failed to delete campaign' }); //
     }
   }
 );
