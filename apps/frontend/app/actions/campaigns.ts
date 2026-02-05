@@ -3,10 +3,26 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
+const API_URL = 'http://127.0.0.1:4291/api';
+
 export async function createCampaignAction(prevState: any, formData: FormData) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('better-auth.session-token')?.value;
+  const token = cookieStore.get('better-auth.session_token')?.value;
 
+  const categories =
+    formData
+      .get('targetCategories')
+      ?.toString()
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) || [];
+  const regions =
+    formData
+      .get('targetRegions')
+      ?.toString()
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) || [];
   // Extract data from form
   const name = formData.get('name');
   if (!name || name.toString().length < 3) {
@@ -17,15 +33,17 @@ export async function createCampaignAction(prevState: any, formData: FormData) {
     };
   }
   const data = {
-    name: name,
+    name: formData.get('name'),
+    description: formData.get('description'),
     budget: Number(formData.get('budget')),
     startDate: new Date(formData.get('startDate') as string).toISOString(),
     endDate: new Date(formData.get('endDate') as string).toISOString(),
     sponsorId: formData.get('sponsorId'),
     status: 'ACTIVE',
+    targetCategories: categories,
+    targetRegions: regions,
   };
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/campaigns`, {
+  const res = await fetch(`${API_URL}/campaigns`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -45,39 +63,63 @@ export async function createCampaignAction(prevState: any, formData: FormData) {
 
 export async function deleteCampaignAction(campaignId: string) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('better-auth.session-token')?.value;
+  const token = cookieStore.get('better-auth.session_token')?.value;
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/campaigns/${campaignId}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  if (!token) return { success: false, error: 'Unauthorized' };
 
-  if (!res.ok) {
-    return { success: false, error: 'Failed to delete campaign' };
+  const API_ADDR = 'http://127.0.0.1:4291/api';
+
+  try {
+    const res = await fetch(`${API_ADDR}/campaigns/${campaignId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.ok) {
+      revalidatePath('/dashboard/sponsor');
+      return { success: true };
+    }
+
+    return { success: false, error: 'Delete failed' };
+  } catch (e) {
+    return { success: false, error: 'Network error' };
   }
-
-  // Revalidate to sync the server-side cache
-  revalidatePath('/dashboard/sponsor');
-  return { success: true };
 }
 
 export async function updateCampaignAction(prevState: any, formData: FormData) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('better-auth.session-token')?.value;
-
+  const token = cookieStore.get('better-auth.session_token')?.value;
   const campaignId = formData.get('id');
+
+  const categories =
+    formData
+      .get('targetCategories')
+      ?.toString()
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) || [];
+  const regions =
+    formData
+      .get('targetRegions')
+      ?.toString()
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) || [];
+
   const data = {
     name: formData.get('name'),
+    description: formData.get('description'),
     budget: Number(formData.get('budget')),
     startDate: new Date(formData.get('startDate') as string).toISOString(),
     endDate: new Date(formData.get('endDate') as string).toISOString(),
     status: formData.get('status'),
+    targetCategories: categories,
+    targetRegions: regions,
   };
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/campaigns/${campaignId}`, {
-    method: 'PATCH',
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}`, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,

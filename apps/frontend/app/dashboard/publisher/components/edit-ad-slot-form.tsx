@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { updateAdSlotAction } from '@/app/actions/ad-slots';
 
@@ -10,8 +10,11 @@ interface EditAdSlotFormProps {
     name: string;
     type: string;
     basePrice: number;
-    description?: string;
+    description?: string | null;
     isAvailable: boolean;
+    position: string;
+    width?: number | null;
+    height?: number | null;
   };
   onSuccess: () => void;
 }
@@ -22,14 +25,17 @@ export function EditAdSlotForm({ adSlot, onSuccess }: EditAdSlotFormProps) {
     error: null,
   });
 
-  if (state.success) {
-    onSuccess();
-  }
+  useEffect(() => {
+    if (state.success) {
+      onSuccess();
+    }
+  }, [state.success, onSuccess]);
 
   return (
     <form action={formAction} className="space-y-4">
       {/* Hidden ID field for the PATCH request  */}
       <input type="hidden" name="id" value={adSlot.id} />
+      <input type="hidden" name="type" value={adSlot.type} />
 
       {state.error && (
         <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
@@ -45,6 +51,46 @@ export function EditAdSlotForm({ adSlot, onSuccess }: EditAdSlotFormProps) {
           required
           className="w-full rounded-lg border p-2"
         />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Description</label>
+        <textarea
+          name="description"
+          defaultValue={adSlot.description || ''}
+          className="w-full border p-2 rounded h-20"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Position (Required)</label>
+        <input
+          name="position"
+          defaultValue={adSlot.position}
+          required
+          className="w-full border p-2 rounded"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Width (px)</label>
+          <input
+            name="width"
+            type="number"
+            defaultValue={adSlot.width || ''}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Height (px)</label>
+          <input
+            name="height"
+            type="number"
+            defaultValue={adSlot.height || ''}
+            className="w-full border p-2 rounded"
+          />
+        </div>
       </div>
 
       <div className="space-y-1">

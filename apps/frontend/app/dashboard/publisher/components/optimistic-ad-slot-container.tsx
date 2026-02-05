@@ -2,8 +2,8 @@
 
 import { useOptimistic, useTransition, useState } from 'react';
 import { AdSlotCard } from './ad-slot-card';
-import { CreateAdSlotForm } from './create-ad-slot-form'; // New Component
-import { deleteAdSlotAction } from '@/app/actions/ad-slots';
+import { CreateAdSlotForm } from './create-ad-slot-form';
+import { deleteAdSlotAction, updateAdSlotAction } from '@/app/actions/ad-slots';
 
 export function OptimisticAdSlotContainer({
   initialAdSlots,
@@ -40,6 +40,26 @@ export function OptimisticAdSlotContainer({
     });
   };
 
+  const handleUpdate = async (formData: FormData) => {
+    const slotId = formData.get('id') as string;
+    const isAvailable = formData.get('isAvailable') === 'true';
+
+    startTransition(async () => {
+      updateAdSlots({
+        action: 'UPDATE',
+        payload: {
+          id: slotId,
+          data: {
+            isAvailable,
+            name: formData.get('name') as string,
+            basePrice: Number(formData.get('basePrice')),
+          },
+        },
+      });
+
+      await updateAdSlotAction(null, formData);
+    });
+  };
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -58,8 +78,7 @@ export function OptimisticAdSlotContainer({
             key={slot.id}
             adSlot={slot}
             onDelete={() => handleDelete(slot.id)}
-            // Updates will be handled by a similar modal pattern in the card
-            onUpdate={() => {}}
+            onUpdate={handleUpdate}
           />
         ))}
       </div>

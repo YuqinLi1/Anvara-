@@ -5,7 +5,7 @@ import { getUserRole } from '@/lib/auth-helpers';
 import { OptimisticAdSlotContainer } from './components/optimistic-ad-slot-container';
 
 async function getInitialAdSlots(publisherId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291/api';
+  const baseUrl = 'http://127.0.0.1:4291/api';
   const res = await fetch(`${baseUrl}/ad-slots?publisherId=${publisherId}`, {
     cache: 'no-store', // fetch data
   });
@@ -59,10 +59,12 @@ export default async function PublisherDashboard() {
         </div>
       </div>
 
-      <OptimisticAdSlotContainer
-        initialAdSlots={initialAdSlots}
-        publisherId={roleData.publisherId}
-      />
+      <div className="mt-8">
+        <OptimisticAdSlotContainer
+          publisherId={roleData.publisherId}
+          initialAdSlots={initialAdSlots}
+        />
+      </div>
     </div>
   );
 }

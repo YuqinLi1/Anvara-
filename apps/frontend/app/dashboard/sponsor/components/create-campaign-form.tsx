@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom'; //
+import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { createCampaignAction } from '@/app/actions/campaigns';
 
 interface CreateCampaignFormProps {
@@ -8,20 +9,17 @@ interface CreateCampaignFormProps {
   onSuccess: () => void;
 }
 
-/**
- * Challenge 5: Form implementation with State and Status hooks
- */
 export function CreateCampaignForm({ sponsorId, onSuccess }: CreateCampaignFormProps) {
-  // Requirement: Use useFormState for error handling and feedback
-  const [state, formAction] = useFormState(createCampaignAction, {
+  const [state, formAction, isPending] = useActionState(createCampaignAction, {
     success: false,
     error: null,
   });
 
-  // Automatically close modal on success
-  if (state.success) {
-    onSuccess();
-  }
+  useEffect(() => {
+    if (state.success) {
+      onSuccess();
+    }
+  }, [state.success, onSuccess]);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -44,11 +42,22 @@ export function CreateCampaignForm({ sponsorId, onSuccess }: CreateCampaignFormP
         />
       </div>
 
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Description</label>
+        <textarea
+          name="description"
+          placeholder="Optional campaign details..."
+          className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm h-20"
+        />
+      </div>
+
       <div className="space-y-1">
         <label className="text-sm font-medium">Budget ($)</label>
         <input
           name="budget"
           type="number"
+          step="0.01"
+          min="0.01"
           required
           className="w-full rounded-lg border border-[--color-border] p-2"
           placeholder="5000"
@@ -63,6 +72,31 @@ export function CreateCampaignForm({ sponsorId, onSuccess }: CreateCampaignFormP
         <div className="space-y-1">
           <label className="text-sm font-medium">End Date</label>
           <input name="endDate" type="date" required className="w-full rounded-lg border p-2" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Category (comma separated)
+          </label>
+          <input
+            name="targetCategories"
+            type="text"
+            placeholder="Tech, Lifestyle"
+            className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Regions (comma separated)
+          </label>
+          <input
+            name="targetRegions"
+            type="text"
+            placeholder="e.g. US, EU, Asia"
+            className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm"
+          />
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 import { useOptimistic, useTransition, useState } from 'react';
 import { CampaignCard } from './campaign-card';
 import { CreateCampaignButton } from './create-campaign-button';
-import { createCampaignAction, deleteCampaignAction } from '@/app/actions/campaigns';
+import { deleteCampaignAction, updateCampaignAction } from '@/app/actions/campaigns';
 import { CreateCampaignForm } from './create-campaign-form';
 
 /**
@@ -19,26 +19,49 @@ export function OptimisticCampaignContainer({
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Updated optimistic logic to handle both CREATE and DELETE
-  const [optimisticCampaigns, updateOptimisticCampaigns] = useOptimistic(
+  // Updated optimistic logic to handle  CREATE, UPDATE, DELETE
+  const [optimisticCampaigns, updateOptimistic] = useOptimistic(
     initialCampaigns,
-    (state, { action, payload }: { action: 'CREATE' | 'DELETE'; payload: any }) => {
-      if (action === 'CREATE') {
-        return [{ ...payload, id: 'temp', status: 'PENDING...', spent: 0 }, ...state];
+    (state, { action, payload }: { action: 'CREATE' | 'DELETE' | 'UPDATE'; payload: any }) => {
+      switch (action) {
+        case 'CREATE':
+          return [{ ...payload, id: 'temp-' + Date.now(), spent: 0, status: 'ACTIVE' }, ...state];
+        case 'DELETE':
+          return state.filter((c) => c.id !== payload);
+        case 'UPDATE':
+          return state.map((c) => (c.id === payload.id ? { ...c, ...payload.data } : c));
+        default:
+          return state;
       }
-      if (action === 'DELETE') {
-        return state.filter((c: any) => c.id !== payload);
-      }
-      return state;
     }
   );
-
-  const handleDelete = async (campaignId: string) => {
+  const handleDelete = async (id: string) => {
     startTransition(async () => {
-      // 1. Instantly remove from UI
-      updateOptimisticCampaigns({ action: 'DELETE', payload: campaignId });
-      // 2. Perform server-side delete
-      await deleteCampaignAction(campaignId);
+      updateOptimistic({ action: 'DELETE', payload: id });
+
+      const result = await deleteCampaignAction(id);
+
+      if (!result.success) {
+        alert(`Delete failed: ${result.error}`);
+      }
+    });
+  };
+  const handleUpdate = async (formData: FormData) => {
+    const id = formData.get('id') as string;
+    startTransition(async () => {
+      updateOptimistic({
+        action: 'UPDATE',
+        payload: {
+          id,
+          data: {
+            name: formData.get('name'),
+            budget: Number(formData.get('budget')),
+            status: formData.get('status'),
+            description: formData.get('description'),
+          },
+        },
+      });
+      await updateCampaignAction(null, formData);
     });
   };
 
@@ -48,29 +71,27 @@ export function OptimisticCampaignContainer({
         <h1 className="text-2xl font-bold">My Campaigns</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="rounded-lg bg-[--color-primary] px-4 py-2 text-white"
+          className="rounded-lg bg-black px-4 py-2 text-white font-medium hover:bg-gray-800 transition-colors"
         >
           + New Campaign
         </button>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {optimisticCampaigns.map((campaign) => (
           <CampaignCard
             key={campaign.id}
             campaign={campaign}
             onDelete={() => handleDelete(campaign.id)}
+            onUpdate={handleUpdate}
           />
         ))}
       </div>
 
-      {/* Campaign List using optimisticCampaigns.map ... */}
-
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <h2 className="mb-4 text-xl font-bold">Create New Campaign</h2>
-            {/* Integrated the new Form component here */}
             <CreateCampaignForm sponsorId={sponsorId} onSuccess={() => setIsModalOpen(false)} />
           </div>
         </div>

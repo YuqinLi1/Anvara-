@@ -24,9 +24,12 @@ export async function createAdSlotAction(prevState: any, formData: FormData) {
 
   const data = {
     name: formData.get('name'),
-    type: formData.get('type'),
-    basePrice: Number(formData.get('basePrice')),
     description: formData.get('description'),
+    type: formData.get('type'),
+    position: formData.get('position'),
+    width: formData.get('width') ? Number(formData.get('width')) : null,
+    height: formData.get('height') ? Number(formData.get('height')) : null,
+    basePrice: Number(formData.get('basePrice')),
     publisherId: formData.get('publisherId'),
     isAvailable: true,
   };
@@ -58,20 +61,24 @@ export async function deleteAdSlotAction(slotId: string) {
   const cookieStore = await cookies();
   const token = cookieStore.get('better-auth.session_token')?.value;
 
-  const res = await fetch(`${API_URL}/ad-slots/${slotId}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  if (!token) return { success: false, error: 'No token' };
 
-  if (!res.ok) {
-    return { success: false, error: 'Failed to delete ad slot' };
+  try {
+    const res = await fetch(`${API_URL}/ad-slots/${slotId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (res.ok) {
+      revalidatePath('/dashboard/publisher');
+      return { success: true, error: null };
+    }
+
+    const errorData = await res.json().catch(() => ({}));
+    return { success: false, error: errorData.message || 'Delete failed' };
+  } catch (e) {
+    return { success: false, error: 'Network error' };
   }
-
-  // Immediately refresh the data on the server side
-  revalidatePath('/dashboard/publisher');
-  return { success: true, error: null };
 }
 
 export async function updateAdSlotAction(prevState: any, formData: FormData) {
@@ -81,7 +88,10 @@ export async function updateAdSlotAction(prevState: any, formData: FormData) {
 
   const data = {
     name: formData.get('name'),
-    type: formData.get('type'),
+    description: formData.get('description'),
+    position: formData.get('position'),
+    width: formData.get('width') ? Number(formData.get('width')) : null,
+    height: formData.get('height') ? Number(formData.get('height')) : null,
     basePrice: Number(formData.get('basePrice')),
     isAvailable: formData.get('isAvailable') === 'true',
   };

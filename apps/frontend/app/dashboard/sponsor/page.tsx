@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getUserRole } from '@/lib/auth-helpers';
@@ -9,10 +9,30 @@ interface PageProps {
 }
 
 async function getCampaigns(sponsorId: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/campaigns?sponsorId=${sponsorId}`, {
-    cache: 'no-store', // Ensures fresh data on every request
+  const cookieStore = await cookies();
+  const token = cookieStore.get('better-auth.session_token')?.value;
+
+  let baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291/api';
+
+  if (!baseUrl.endsWith('/api')) {
+    baseUrl = `${baseUrl.replace(/\/$/, '')}/api`;
+  }
+
+  const finalUrl = `${baseUrl}/campaigns?sponsorId=${sponsorId}`;
+
+  const res = await fetch(finalUrl, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
   });
-  return res.ok ? res.json() : [];
+
+  if (!res.ok) {
+    console.error(`Fetch failed (${res.status}) for URL: ${finalUrl}`);
+    return [];
+  }
+
+  return res.json();
 }
 
 export default async function SponsorDashboard({ searchParams }: PageProps) {
@@ -37,9 +57,6 @@ export default async function SponsorDashboard({ searchParams }: PageProps) {
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      {/* OptimisticCampaignContainer now handles the "Create" button, 
-          the "Edit/Delete" cards, and the optimistic state management 
-      */}
       <OptimisticCampaignContainer
         initialCampaigns={initialCampaigns}
         sponsorId={roleData.sponsorId}

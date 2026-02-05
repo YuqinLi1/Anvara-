@@ -11,6 +11,9 @@ interface AdSlotCardProps {
     type: string;
     basePrice: number;
     isAvailable: boolean;
+    position: string;
+    width?: number;
+    height?: number;
   };
   onDelete: () => void;
   onUpdate: (formData: FormData) => void;
@@ -28,9 +31,15 @@ export function AdSlotCard({ adSlot, onDelete, onUpdate }: AdSlotCardProps) {
 
   const handleToggle = () => {
     const formData = new FormData();
+    formData.append('id', adSlot.id);
     formData.append('name', adSlot.name);
     formData.append('type', adSlot.type);
     formData.append('basePrice', String(adSlot.basePrice));
+
+    if (adSlot.position) {
+      formData.append('position', adSlot.position);
+    }
+
     formData.append('isAvailable', String(!adSlot.isAvailable));
 
     onUpdate(formData);
@@ -45,7 +54,7 @@ export function AdSlotCard({ adSlot, onDelete, onUpdate }: AdSlotCardProps) {
             onDelete();
           }
         }}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all z-10"
+        className="absolute top-2 right-2 opacity-100 p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-all z-20 bg-white/80 shadow-sm border border-red-100"
         title="Delete Slot"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

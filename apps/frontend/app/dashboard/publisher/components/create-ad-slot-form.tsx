@@ -27,9 +27,49 @@ export function CreateAdSlotForm({
       {state.error && <p className="text-red-500 text-sm">{state.error}</p>}
 
       <input name="name" placeholder="Slot Name" required className="w-full border p-2 rounded" />
+      <textarea
+        name="description"
+        placeholder="Description (Optional)"
+        className="w-full border p-2 rounded h-20"
+      />
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Position (Required)</label>
+        <input
+          name="position"
+          placeholder="e.g. Header, in-content"
+          required
+          className="w-full border p-2 rounded"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Width (px)</label>
+          <input
+            name="width"
+            type="number"
+            placeholder="728"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Height (px)</label>
+          <input
+            name="height"
+            type="number"
+            placeholder="90"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+      </div>
       <select name="type" className="w-full border p-2 rounded">
         <option value="DISPLAY">Display</option>
         <option value="VIDEO">Video</option>
+        <option value="NATIVE">Native</option>
+        <option value="NEWSLETTER">Newsletter</option>
+        <option value="PODCAST">Podcast</option>
       </select>
       <input
         name="basePrice"
