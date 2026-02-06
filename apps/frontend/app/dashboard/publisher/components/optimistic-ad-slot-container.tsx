@@ -53,6 +53,11 @@ export function OptimisticAdSlotContainer({
             isAvailable,
             name: formData.get('name') as string,
             basePrice: Number(formData.get('basePrice')),
+            description: formData.get('description') as string,
+            type: formData.get('type') as string,
+            position: formData.get('position') as string,
+            width: formData.get('width') ? Number(formData.get('width')) : null,
+            height: formData.get('height') ? Number(formData.get('height')) : null,
           },
         },
       });
@@ -87,7 +92,7 @@ export function OptimisticAdSlotContainer({
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-xl font-bold">Create Ad Slot</h2>
+            <h2 className="mb-6 text-xl font-bold">Create Ad Slot</h2>
             <CreateAdSlotForm publisherId={publisherId} onSuccess={() => setIsModalOpen(false)} />
           </div>
         </div>

@@ -58,6 +58,8 @@ export function OptimisticCampaignContainer({
             budget: Number(formData.get('budget')),
             status: formData.get('status'),
             description: formData.get('description'),
+            startDate: formData.get('startDate') as string,
+            endDate: formData.get('endDate') as string,
           },
         },
       });
@@ -91,8 +93,9 @@ export function OptimisticCampaignContainer({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-xl font-bold">Create New Campaign</h2>
+          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
+            {' '}
+            <h2 className="mb-6 text-xl font-bold">Create New Campaign</h2>
             <CreateCampaignForm sponsorId={sponsorId} onSuccess={() => setIsModalOpen(false)} />
           </div>
         </div>

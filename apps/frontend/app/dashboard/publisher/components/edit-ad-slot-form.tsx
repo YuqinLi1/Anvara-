@@ -35,108 +35,110 @@ export function EditAdSlotForm({ adSlot, onSuccess }: EditAdSlotFormProps) {
   }, [state.success, onSuccess]);
 
   return (
-    <form action={formAction} className="space-y-4">
-      {/* Hidden ID field for the PATCH request  */}
-      <input type="hidden" name="id" value={adSlot.id} />
-      <input type="hidden" name="type" value={adSlot.type} />
+    <div className="relative">
+      <form action={formAction} className="space-y-4">
+        {/* Hidden ID field for the PATCH request  */}
+        <input type="hidden" name="id" value={adSlot.id} />
+        <input type="hidden" name="type" value={adSlot.type} />
 
-      {state.error && (
-        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
-          {state.error}
-        </div>
-      )}
-
-      {/* Name */}
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Slot Name</label>
-        <input
-          name="name"
-          defaultValue={adSlot.name}
-          className={`w-full border p-2 rounded ${
-            state.validationErrors?.name ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        {state.validationErrors?.name && (
-          <p className="text-red-500 text-xs">{state.validationErrors.name}</p>
+        {state.error && (
+          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
+            {state.error}
+          </div>
         )}
-      </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Description</label>
-        <textarea
-          name="description"
-          defaultValue={adSlot.description || ''}
-          className="w-full border p-2 rounded h-20"
-        />
-      </div>
-
-      {/* Position  */}
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Position (Required)</label>
-        <input
-          name="position"
-          defaultValue={adSlot.position}
-          className={`w-full border p-2 rounded ${
-            state.validationErrors?.position ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        {state.validationErrors?.position && (
-          <p className="text-red-500 text-xs">{state.validationErrors.position}</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+        {/* Name */}
         <div className="space-y-1">
-          <label className="text-sm font-medium">Width (px)</label>
+          <label className="text-sm font-medium">Slot Name</label>
           <input
-            name="width"
-            type="number"
-            defaultValue={adSlot.width || ''}
-            className="w-full border p-2 rounded"
+            name="name"
+            defaultValue={adSlot.name}
+            className={`w-full border p-2 rounded ${
+              state.validationErrors?.name ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {state.validationErrors?.name && (
+            <p className="text-red-500 text-xs">{state.validationErrors.name}</p>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Description</label>
+          <textarea
+            name="description"
+            defaultValue={adSlot.description || ''}
+            className="w-full border p-2 rounded h-20"
           />
         </div>
+
+        {/* Position  */}
         <div className="space-y-1">
-          <label className="text-sm font-medium">Height (px)</label>
+          <label className="text-sm font-medium">Position (Required)</label>
           <input
-            name="height"
-            type="number"
-            defaultValue={adSlot.height || ''}
-            className="w-full border p-2 rounded"
+            name="position"
+            defaultValue={adSlot.position}
+            className={`w-full border p-2 rounded ${
+              state.validationErrors?.position ? 'border-red-500' : 'border-gray-300'
+            }`}
           />
+          {state.validationErrors?.position && (
+            <p className="text-red-500 text-xs">{state.validationErrors.position}</p>
+          )}
         </div>
-      </div>
 
-      {/* Price */}
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Price ($/mo)</label>
-        <input
-          name="basePrice"
-          type="number"
-          defaultValue={adSlot.basePrice}
-          className={`w-full rounded-lg border p-2 ${
-            state.validationErrors?.basePrice ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        {state.validationErrors?.basePrice && (
-          <p className="text-red-500 text-xs">{state.validationErrors.basePrice}</p>
-        )}
-      </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Status</label>
-        <select
-          name="isAvailable"
-          defaultValue={String(adSlot.isAvailable)}
-          className="w-full rounded-lg border p-2"
-        >
-          <option value="true">Available</option>
-          <option value="false">Booked</option>
-        </select>
-      </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Width (px)</label>
+            <input
+              name="width"
+              type="number"
+              defaultValue={adSlot.width || ''}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Height (px)</label>
+            <input
+              name="height"
+              type="number"
+              defaultValue={adSlot.height || ''}
+              className="w-full border p-2 rounded"
+            />
+          </div>
+        </div>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <SubmitButton />
-      </div>
-    </form>
+        {/* Price */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Price ($/mo)</label>
+          <input
+            name="basePrice"
+            type="number"
+            defaultValue={adSlot.basePrice}
+            className={`w-full rounded-lg border p-2 ${
+              state.validationErrors?.basePrice ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {state.validationErrors?.basePrice && (
+            <p className="text-red-500 text-xs">{state.validationErrors.basePrice}</p>
+          )}
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm font-medium">Status</label>
+          <select
+            name="isAvailable"
+            defaultValue={String(adSlot.isAvailable)}
+            className="w-full rounded-lg border p-2"
+          >
+            <option value="true">Available</option>
+            <option value="false">Booked</option>
+          </select>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <SubmitButton />
+        </div>
+      </form>
+    </div>
   );
 }
 

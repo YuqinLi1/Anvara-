@@ -46,6 +46,15 @@ export async function createCampaignAction(
   if (!rawStartDate) validationErrors.startDate = 'Start date is required';
   if (!rawEndDate) validationErrors.endDate = 'End date is required';
 
+  // check date logic
+  if (rawStartDate && rawEndDate) {
+    const start = new Date(rawStartDate);
+    const end = new Date(rawEndDate);
+    if (end < start) {
+      validationErrors.endDate = 'End date cannot be earlier than start date'; //
+    }
+  }
+
   if (Object.keys(validationErrors).length > 0) {
     return { success: false, error: 'Please fix the errors below', validationErrors };
   }
@@ -156,6 +165,15 @@ export async function updateCampaignAction(
   }
   if (!rawStartDate) validationErrors.startDate = 'Start date is required';
   if (!rawEndDate) validationErrors.endDate = 'End date is required';
+
+  // check date logic
+  if (rawStartDate && rawEndDate) {
+    const start = new Date(rawStartDate);
+    const end = new Date(rawEndDate);
+    if (end < start) {
+      validationErrors.endDate = 'End date cannot be earlier than start date'; //
+    }
+  }
 
   if (Object.keys(validationErrors).length > 0) {
     return { success: false, error: 'Please fix the errors below', validationErrors };
