@@ -48,10 +48,16 @@ export default async function SponsorDashboard({ searchParams }: PageProps) {
   const [params, roleData] = await Promise.all([searchParams, getUserRole(session.user.id)]);
 
   // Verify user has 'sponsor' role and associated sponsorId
-  if (roleData.role !== 'sponsor' || !roleData.sponsorId) {
+  if (roleData.role !== 'sponsor') {
+    if (roleData.role === 'publisher') {
+      redirect('/dashboard/publisher');
+    }
     redirect('/');
   }
 
+  if (!roleData.sponsorId) {
+    redirect('/');
+  }
   // Initial fetch on the server to pass to the client container
   const initialCampaigns = await getCampaigns(roleData.sponsorId);
 

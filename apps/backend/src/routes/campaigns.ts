@@ -7,35 +7,41 @@ import { verifySponsorOwnership } from '../middleware/sponsorOwnership.js';
 const router: IRouter = Router();
 
 // GET /api/campaigns - List all campaigns
-router.get('/', authMiddleware, verifySponsorOwnership, async (req: AuthRequest, res: Response) => {
-  try {
-    const { status, search, maxPrice } = req.query;
-    const sponsorId = req.user?.sponsorId;
+router.get(
+  '/',
+  authMiddleware,
+  roleMiddleware(['SPONSOR']),
+  verifySponsorOwnership,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { status, search, maxPrice } = req.query;
+      const sponsorId = req.user?.sponsorId;
 
-    const campaigns = await prisma.campaign.findMany({
-      where: {
-        ...(status && { status: status as string as 'ACTIVE' | 'PAUSED' | 'COMPLETED' }),
-        ...(sponsorId && { sponsorId: String(sponsorId) }),
-        ...(search && {
-          name: { contains: String(search), mode: 'insensitive' },
-        }),
-        ...(maxPrice && {
-          budget: { lte: Number(maxPrice) },
-        }),
-      },
-      include: {
-        sponsor: { select: { id: true, name: true, logo: true } },
-        _count: { select: { creatives: true, placements: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+      const campaigns = await prisma.campaign.findMany({
+        where: {
+          ...(status && { status: status as string as 'ACTIVE' | 'PAUSED' | 'COMPLETED' }),
+          ...(sponsorId && { sponsorId: String(sponsorId) }),
+          ...(search && {
+            name: { contains: String(search), mode: 'insensitive' },
+          }),
+          ...(maxPrice && {
+            budget: { lte: Number(maxPrice) },
+          }),
+        },
+        include: {
+          sponsor: { select: { id: true, name: true, logo: true } },
+          _count: { select: { creatives: true, placements: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
-    res.json(campaigns);
-  } catch (error) {
-    console.error('Error fetching campaigns:', error);
-    res.status(500).json({ error: 'Failed to fetch campaigns' });
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      res.status(500).json({ error: 'Failed to fetch campaigns' });
+    }
   }
-});
+);
 
 // GET /api/campaigns/:id - Get single campaign with details
 router.get('/:id', async (req: Request, res: Response) => {

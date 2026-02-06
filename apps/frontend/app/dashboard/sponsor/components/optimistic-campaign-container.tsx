@@ -61,7 +61,8 @@ export function OptimisticCampaignContainer({
           },
         },
       });
-      await updateCampaignAction(null, formData);
+      const prevState = { success: false, error: null, validationErrors: {} };
+      await updateCampaignAction(prevState, formData);
     });
   };
 

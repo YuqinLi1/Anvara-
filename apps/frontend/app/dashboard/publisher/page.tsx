@@ -33,6 +33,9 @@ export default async function PublisherDashboard() {
   const roleData = await getUserRole(session.user.id);
 
   if (roleData.role !== 'publisher' || !roleData.publisherId) {
+    if (roleData.role === 'sponsor') {
+      redirect('/dashboard/sponsor');
+    }
     redirect('/');
   }
 

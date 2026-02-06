@@ -17,7 +17,7 @@ export async function Nav() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291'}/api/auth/role/${session.user.id}`,
-        { next: { revalidate: 3600 } } // 缓存 1 小时
+        { next: { revalidate: 3600 } }
       );
       roleData = await res.json();
     } catch (error) {

@@ -57,7 +57,8 @@ export function OptimisticAdSlotContainer({
         },
       });
 
-      await updateAdSlotAction(null, formData);
+      const initialState = { success: false, error: null, validationErrors: {} };
+      await updateAdSlotAction(initialState, formData);
     });
   };
   return (
