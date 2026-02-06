@@ -1,101 +1,44 @@
-'use client';
-
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { authClient } from '@/auth-client';
-import { useRouter } from 'next/navigation';
+import { headers } from 'next/headers';
+import { NavLinks } from './nav-links';
+import { UserMenu } from './user-menu';
 
-type UserRole = 'sponsor' | 'publisher' | null;
+export async function Nav() {
+  const { data: session } = await authClient.getSession({
+    fetchOptions: {
+      headers: await headers(),
+    },
+  });
 
-export function Nav() {
-  const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
-  const [role, setRole] = useState<UserRole>(null);
+  let roleData = { role: null, sponsorId: null, publisherId: null };
 
-  // TODO: Convert to server component and fetch role server-side
-  // Fetch user role from backend when user is logged in
-  useEffect(() => {
-    // if session is null（logout)）, clear role
-    if (!session) {
-      setRole(null);
-      return;
-    }
-
-    const fetchRole = async () => {
+  if (session?.user?.id) {
+    try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/role/${session.user.id}`
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291'}/api/auth/role/${session.user.id}`,
+        { next: { revalidate: 3600 } } // 缓存 1 小时
       );
-      const data = await res.json();
-      setRole(data.role);
-    };
-    fetchRole();
-  }, [session]);
-
-  const handleLogout = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          setRole(null);
-          router.push('/login');
-          router.refresh(); // clear all Server Component
-        },
-      },
-    });
-  };
-
-  // TODO: Add active link styling using usePathname() from next/navigation
-  // The current page's link should be highlighted differently
+      roleData = await res.json();
+    } catch (error) {
+      console.error('Failed to fetch role server-side:', error);
+    }
+  }
 
   return (
-    <header className="border-b border-[--color-border]">
+    <header className="border-b border-[--color-border] bg-white">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="text-xl font-bold text-[--color-foreground]">
             Anvara
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/marketplace"
-              className="text-sm text-[--color-muted] hover:text-[--color-foreground]"
-            >
-              Marketplace
-            </Link>
-            {user && role === 'sponsor' && (
-              <Link
-                href="/dashboard/sponsor"
-                className="text-sm text-[--color-muted] hover:text-[--color-foreground]"
-              >
-                My Campaigns
-              </Link>
-            )}
-            {user && role === 'publisher' && (
-              <Link
-                href="/dashboard/publisher"
-                className="text-sm text-[--color-muted] hover:text-[--color-foreground]"
-              >
-                My Ad Slots
-              </Link>
-            )}
-          </div>
+          <NavLinks session={session} role={roleData.role} />
         </div>
 
         <div className="flex items-center gap-4">
-          {isPending ? (
-            <span className="text-sm text-[--color-muted]">Checking session...</span>
-          ) : user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-[--color-muted] hidden sm:inline">
-                {user.email} {role && `(${role})`}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="rounded bg-gray-600 px-3 py-1.5 text-sm text-white hover:bg-gray-500 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
+          {session ? (
+            <UserMenu session={session} role={roleData.role} />
           ) : (
             <Link
               href="/login"
