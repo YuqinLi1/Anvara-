@@ -9,13 +9,19 @@ const router: IRouter = Router();
 // GET /api/campaigns - List all campaigns
 router.get('/', authMiddleware, verifySponsorOwnership, async (req: AuthRequest, res: Response) => {
   try {
-    const { status } = req.query;
+    const { status, search, maxPrice } = req.query;
     const sponsorId = req.user?.sponsorId;
 
     const campaigns = await prisma.campaign.findMany({
       where: {
         ...(status && { status: status as string as 'ACTIVE' | 'PAUSED' | 'COMPLETED' }),
         ...(sponsorId && { sponsorId: String(sponsorId) }),
+        ...(search && {
+          name: { contains: String(search), mode: 'insensitive' },
+        }),
+        ...(maxPrice && {
+          budget: { lte: Number(maxPrice) },
+        }),
       },
       include: {
         sponsor: { select: { id: true, name: true, logo: true } },
@@ -67,7 +73,6 @@ router.post(
   authMiddleware,
   verifySponsorOwnership,
   roleMiddleware(['SPONSOR']),
-  verifySponsorOwnership,
   async (req: Request, res: Response) => {
     try {
       const {

@@ -2,7 +2,6 @@ import { AdSlotGrid } from './components/ad-slot-grid';
 import { MarketplaceFilters } from './components/marketplace-filters';
 import { Suspense } from 'react';
 
-// FIXME: This page fetches all ad slots client-side. Consider:
 // 1. Server-side pagination with searchParams
 // 2. Filtering by category, price range, slot type
 // 3. Search functionality
@@ -24,7 +23,7 @@ export default async function MarketplacePage({ searchParams }: MarketplaceProps
     available: 'true',
     ...(filters.type && { type: filters.type }),
     ...(filters.maxPrice && { maxPrice: filters.maxPrice }),
-    ...(filters.search && { name: filters.search }),
+    ...(filters.search && { search: filters.search }),
     page: filters.page || '1',
   }).toString();
 
@@ -40,7 +39,7 @@ export default async function MarketplacePage({ searchParams }: MarketplaceProps
         <MarketplaceFilters />
       </div>
 
-      {/* FIXME Fixed: Fetching logic moved to Server Component inside AdSlotGrid */}
+      {/*  Fetching logic moved to Server Component inside AdSlotGrid */}
       <Suspense key={query} fallback={<MarketplaceSkeleton />}>
         <AdSlotGrid query={query} />
       </Suspense>

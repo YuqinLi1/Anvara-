@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { authClient } from '@/auth-client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291';
@@ -13,6 +12,26 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // loading page check session
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: session } = await authClient.getSession();
+      if (session) {
+        // already session, redirect
+        const userId = session.user.id;
+        const roleRes = await fetch(`${API_URL}/api/auth/role/${userId}`);
+        const roleData = await roleRes.json();
+        router.refresh();
+
+        if (roleData.role === 'sponsor') {
+          router.push('/dashboard/sponsor');
+        } else if (roleData.role === 'publisher') {
+          router.push('/dashboard/publisher');
+        }
+      }
+    };
+    checkSession();
+  }, [router]);
   // Auto-fill credentials based on selected role
   const email = role === 'sponsor' ? 'sponsor@example.com' : 'publisher@example.com';
   const password = 'password';

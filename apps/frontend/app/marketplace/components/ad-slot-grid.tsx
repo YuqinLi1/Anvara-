@@ -28,9 +28,8 @@ const typeColors: Record<string, string> = {
 };
 
 async function getAdSlots(query: string): Promise<AdSlot[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291/api';
+  const baseUrl = 'http://127.0.0.1:4291/api';
 
-  // fetch data
   const res = await fetch(`${baseUrl}/ad-slots?${query}`, {
     cache: 'no-store',
   });

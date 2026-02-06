@@ -9,7 +9,7 @@ const router: IRouter = Router();
 // GET /api/ad-slots - List available ad slots
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { publisherId, type, available } = req.query;
+    const { publisherId, type, available, search, maxPrice } = req.query;
 
     const adSlots = await prisma.adSlot.findMany({
       where: {
@@ -18,6 +18,17 @@ router.get('/', async (req: Request, res: Response) => {
           type: type as string as 'DISPLAY' | 'VIDEO' | 'NATIVE' | 'NEWSLETTER' | 'PODCAST',
         }),
         ...(available === 'true' && { isAvailable: true }),
+        ...(search && {
+          OR: [
+            { name: { contains: String(search), mode: 'insensitive' } },
+            { description: { contains: String(search), mode: 'insensitive' } },
+          ],
+        }),
+        ...(maxPrice && {
+          basePrice: {
+            lte: Number(maxPrice),
+          },
+        }),
       },
       include: {
         publisher: { select: { id: true, name: true, category: true, monthlyViews: true } },
