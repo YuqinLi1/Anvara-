@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { createAdSlotAction } from '@/app/actions/ad-slots';
+import { createAdSlotAction, type AdSlotActionState } from '@/app/actions/ad-slots';
 
 export function CreateAdSlotForm({
   publisherId,
@@ -11,10 +11,13 @@ export function CreateAdSlotForm({
   publisherId: string;
   onSuccess: () => void;
 }) {
-  const [state, formAction] = useActionState(createAdSlotAction, {
+  const initialState: AdSlotActionState = {
     success: false,
     error: null,
-  });
+    validationErrors: {},
+  };
+
+  const [state, formAction] = useActionState(createAdSlotAction, initialState);
 
   useEffect(() => {
     if (state.success) {
@@ -24,23 +27,46 @@ export function CreateAdSlotForm({
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="publisherId" value={publisherId} />
-      {state.error && <p className="text-red-500 text-sm">{state.error}</p>}
 
-      <input name="name" placeholder="Slot Name" required className="w-full border p-2 rounded" />
+      {/* global error */}
+      {state.error && (
+        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
+          {state.error}
+        </div>
+      )}
+
+      {/* Name  */}
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Slot Name</label>
+        <input
+          name="name"
+          placeholder="Slot Name"
+          className={`w-full border p-2 rounded ${
+            state.validationErrors?.name ? 'border-red-500' : 'border-gray-300'
+          }`}
+        />
+        {state.validationErrors?.name && (
+          <p className="text-red-500 text-xs">{state.validationErrors.name}</p>
+        )}
+      </div>
+
       <textarea
         name="description"
         placeholder="Description (Optional)"
         className="w-full border p-2 rounded h-20"
       />
 
+      {/* Position  */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Position (Required)</label>
         <input
           name="position"
-          placeholder="e.g. Header, in-content"
-          required
-          className="w-full border p-2 rounded"
+          placeholder="e.g. Header"
+          className={`w-full border p-2 rounded ${state.validationErrors?.position ? 'border-red-500' : 'border-gray-300'}`}
         />
+        {state.validationErrors?.position && (
+          <p className="text-red-500 text-xs">{state.validationErrors.position}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -71,14 +97,20 @@ export function CreateAdSlotForm({
         <option value="NEWSLETTER">Newsletter</option>
         <option value="PODCAST">Podcast</option>
       </select>
-      <input
-        name="basePrice"
-        type="number"
-        placeholder="Price"
-        required
-        className="w-full border p-2 rounded"
-      />
-
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Base Price ($)</label>
+        <input
+          name="basePrice"
+          type="number"
+          placeholder="Price"
+          className={`w-full border p-2 rounded ${
+            state.validationErrors?.basePrice ? 'border-red-500' : 'border-gray-300'
+          }`}
+        />
+        {state.validationErrors?.basePrice && (
+          <p className="text-red-500 text-xs">{state.validationErrors.basePrice}</p>
+        )}
+      </div>
       <div className="flex justify-end gap-2">
         <SubmitButton />
       </div>

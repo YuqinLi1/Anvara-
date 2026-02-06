@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { updateAdSlotAction } from '@/app/actions/ad-slots';
+import { updateAdSlotAction, type AdSlotActionState } from '@/app/actions/ad-slots';
 
 interface EditAdSlotFormProps {
   adSlot: {
@@ -20,10 +20,13 @@ interface EditAdSlotFormProps {
 }
 
 export function EditAdSlotForm({ adSlot, onSuccess }: EditAdSlotFormProps) {
-  const [state, formAction] = useActionState(updateAdSlotAction, {
+  const initialState: AdSlotActionState = {
     success: false,
     error: null,
-  });
+    validationErrors: {},
+  };
+
+  const [state, formAction] = useActionState(updateAdSlotAction, initialState);
 
   useEffect(() => {
     if (state.success) {
@@ -43,14 +46,19 @@ export function EditAdSlotForm({ adSlot, onSuccess }: EditAdSlotFormProps) {
         </div>
       )}
 
+      {/* Name */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Slot Name</label>
         <input
           name="name"
           defaultValue={adSlot.name}
-          required
-          className="w-full rounded-lg border p-2"
+          className={`w-full border p-2 rounded ${
+            state.validationErrors?.name ? 'border-red-500' : 'border-gray-300'
+          }`}
         />
+        {state.validationErrors?.name && (
+          <p className="text-red-500 text-xs">{state.validationErrors.name}</p>
+        )}
       </div>
 
       <div className="space-y-1">
@@ -62,14 +70,19 @@ export function EditAdSlotForm({ adSlot, onSuccess }: EditAdSlotFormProps) {
         />
       </div>
 
+      {/* Position  */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Position (Required)</label>
         <input
           name="position"
           defaultValue={adSlot.position}
-          required
-          className="w-full border p-2 rounded"
+          className={`w-full border p-2 rounded ${
+            state.validationErrors?.position ? 'border-red-500' : 'border-gray-300'
+          }`}
         />
+        {state.validationErrors?.position && (
+          <p className="text-red-500 text-xs">{state.validationErrors.position}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -93,17 +106,21 @@ export function EditAdSlotForm({ adSlot, onSuccess }: EditAdSlotFormProps) {
         </div>
       </div>
 
+      {/* Price */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Price ($/mo)</label>
         <input
           name="basePrice"
           type="number"
           defaultValue={adSlot.basePrice}
-          required
-          className="w-full rounded-lg border p-2"
+          className={`w-full rounded-lg border p-2 ${
+            state.validationErrors?.basePrice ? 'border-red-500' : 'border-gray-300'
+          }`}
         />
+        {state.validationErrors?.basePrice && (
+          <p className="text-red-500 text-xs">{state.validationErrors.basePrice}</p>
+        )}
       </div>
-
       <div className="space-y-1">
         <label className="text-sm font-medium">Status</label>
         <select

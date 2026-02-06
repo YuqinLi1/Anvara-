@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { updateCampaignAction } from '@/app/actions/campaigns';
+import { updateCampaignAction, type CampaignActionState } from '@/app/actions/campaigns';
 
 interface EditCampaignFormProps {
   campaign: {
@@ -13,6 +13,8 @@ interface EditCampaignFormProps {
     status: string;
     startDate: string;
     endDate: string;
+    targetCategories?: string[];
+    targetRegions?: string[];
   };
   onSuccess: () => void;
 }
@@ -23,32 +25,40 @@ const formatDateForInput = (dateString: string) => {
 };
 
 export function EditCampaignForm({ campaign, onSuccess, onUpdate }: any) {
-  const [state, formAction] = useActionState(updateCampaignAction, null);
+  const initialState: CampaignActionState = {
+    success: false,
+    error: null,
+    validationErrors: {},
+  };
+  const [state, formAction] = useActionState(updateCampaignAction, initialState);
 
   useEffect(() => {
     if (state?.success) {
       onSuccess();
     }
-  }, [state, onSuccess]);
+  }, [state?.success, onSuccess]);
   return (
-    <form
-      action={async (formData) => {
-        onUpdate(formData);
-        await formAction(formData);
-        onSuccess();
-      }}
-      className="space-y-4"
-    >
+    <form action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={campaign.id} />
+      {state.error && (
+        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">
+          {state.error}
+        </div>
+      )}
 
+      {/* Name */}
       <div>
         <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Name</label>
         <input
           name="name"
           defaultValue={campaign.name}
-          required
-          className="w-full rounded-lg border p-2 text-sm"
+          className={`w-full rounded-lg border p-2 text-sm ${
+            state.validationErrors?.name ? 'border-red-500' : 'border-gray-200'
+          }`}
         />
+        {state.validationErrors?.name && (
+          <p className="mt-1 text-xs text-red-500 font-medium">{state.validationErrors.name}</p>
+        )}
       </div>
 
       <div>
@@ -61,23 +71,29 @@ export function EditCampaignForm({ campaign, onSuccess, onUpdate }: any) {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
+        {/* Budget */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Budget ($)</label>
           <input
             name="budget"
             type="number"
-            step="0.01"
             defaultValue={campaign.budget}
-            required
-            className="w-full rounded-lg border p-2 text-sm"
+            className={`w-full rounded-lg border p-2 text-sm ${
+              state.validationErrors?.budget ? 'border-red-500' : 'border-gray-200'
+            }`}
           />
+          {state.validationErrors?.budget && (
+            <p className="mt-1 text-xs text-red-500">{state.validationErrors.budget}</p>
+          )}
         </div>
+
+        {/* Status */}
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Status</label>
           <select
             name="status"
             defaultValue={campaign.status}
-            className="w-full rounded-lg border p-2 text-sm"
+            className="w-full rounded-lg border p-2 text-sm border-gray-200"
           >
             <option value="DRAFT">Draft</option>
             <option value="ACTIVE">Active</option>

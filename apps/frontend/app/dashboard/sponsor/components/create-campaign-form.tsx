@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { createCampaignAction } from '@/app/actions/campaigns';
+import { createCampaignAction, type CampaignActionState } from '@/app/actions/campaigns';
 
 interface CreateCampaignFormProps {
   sponsorId: string;
@@ -10,7 +10,13 @@ interface CreateCampaignFormProps {
 }
 
 export function CreateCampaignForm({ sponsorId, onSuccess }: CreateCampaignFormProps) {
-  const [state, formAction, isPending] = useActionState(createCampaignAction, {
+  const initialState: CampaignActionState = {
+    success: false,
+    error: null,
+    validationErrors: {},
+  };
+
+  const [state, formAction] = useActionState(createCampaignAction, {
     success: false,
     error: null,
   });
@@ -32,14 +38,19 @@ export function CreateCampaignForm({ sponsorId, onSuccess }: CreateCampaignFormP
         </div>
       )}
 
+      {/* Name*/}
       <div className="space-y-1">
         <label className="text-sm font-medium">Campaign Name</label>
         <input
           name="name"
-          required
-          className="w-full rounded-lg border border-[--color-border] p-2 focus:ring-2 focus:ring-[--color-primary]"
           placeholder="Summer 2026 Promo"
+          className={`w-full rounded-lg border p-2 ${
+            state.validationErrors?.name ? 'border-red-500' : 'border-gray-300'
+          }`}
         />
+        {state.validationErrors?.name && (
+          <p className="text-red-500 text-xs">{state.validationErrors.name}</p>
+        )}
       </div>
 
       <div>
@@ -51,30 +62,46 @@ export function CreateCampaignForm({ sponsorId, onSuccess }: CreateCampaignFormP
         />
       </div>
 
+      {/* Budget */}
       <div className="space-y-1">
         <label className="text-sm font-medium">Budget ($)</label>
         <input
           name="budget"
           type="number"
-          step="0.01"
-          min="0.01"
-          required
-          className="w-full rounded-lg border border-[--color-border] p-2"
-          placeholder="5000"
+          placeholder="1000"
+          className={`w-full rounded-lg border p-2 ${
+            state.validationErrors?.budget ? 'border-red-500' : 'border-gray-300'
+          }`}
         />
+        {state.validationErrors?.budget && (
+          <p className="text-red-500 text-xs">{state.validationErrors.budget}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-sm font-medium">Start Date</label>
-          <input name="startDate" type="date" required className="w-full rounded-lg border p-2" />
+          <input
+            name="startDate"
+            type="date"
+            required
+            className={`w-full rounded-lg border p-2 ${
+              state.error ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
         </div>
         <div className="space-y-1">
           <label className="text-sm font-medium">End Date</label>
-          <input name="endDate" type="date" required className="w-full rounded-lg border p-2" />
+          <input
+            name="endDate"
+            type="date"
+            required
+            className={`w-full rounded-lg border p-2 ${
+              state.error ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">

@@ -4,22 +4,54 @@ import { string } from 'better-auth';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-// const API_URL = process.env.NEXT_PUBLIC_API_URL
-//   ? `${process.env.NEXT_PUBLIC_API_URL}/api`
-//   : 'http://localhost:4291/api';
+export type AdSlotActionState = {
+  success: boolean;
+  error: string | null;
+  validationErrors?: {
+    name?: string;
+    position?: string;
+    basePrice?: string;
+    type?: string;
+    publisherId?: string;
+  };
+};
 
 const API_URL = 'http://127.0.0.1:4291/api';
 /**
  * Create Ad Slot Server Action
  */
-export async function createAdSlotAction(prevState: any, formData: FormData) {
+export async function createAdSlotAction(
+  prevState: AdSlotActionState,
+  formData: FormData
+): Promise<AdSlotActionState> {
   const cookieStore = await cookies();
   const token = cookieStore.get('better-auth.session_token')?.value;
 
   const allCookies = cookieStore.getAll().map((c) => c.name);
 
   if (!token) {
-    return { success: false, error: 'Authentication failed: No session token found in cookies.' };
+    return {
+      success: false,
+      error: 'Authentication failed: No session token found.',
+      validationErrors: {},
+    };
+  }
+
+  const rawName = formData.get('name') as string;
+  const rawPosition = formData.get('position') as string;
+  const rawBasePrice = formData.get('basePrice');
+  const basePrice = Number(rawBasePrice);
+
+  const validationErrors: AdSlotActionState['validationErrors'] = {};
+  if (!rawName || rawName.trim() === '') validationErrors.name = 'Slot name is required';
+  if (!rawPosition || rawPosition.trim() === '') validationErrors.position = 'Position is required';
+  if (!rawBasePrice || isNaN(basePrice) || basePrice <= 0) {
+    validationErrors.basePrice = 'Price must be a positive number';
+  }
+
+  // if validat error return
+  if (Object.keys(validationErrors).length > 0) {
+    return { success: false, error: 'Please fix the highlighted errors', validationErrors };
   }
 
   const data = {
@@ -81,10 +113,36 @@ export async function deleteAdSlotAction(slotId: string) {
   }
 }
 
-export async function updateAdSlotAction(prevState: any, formData: FormData) {
+/**
+ * Update Ad Slot Server Action
+ */
+export async function updateAdSlotAction(
+  prevState: AdSlotActionState,
+  formData: FormData
+): Promise<AdSlotActionState> {
   const cookieStore = await cookies();
   const token = cookieStore.get('better-auth.session_token')?.value;
   const slotId = formData.get('id');
+
+  if (!token) {
+    return { success: false, error: 'Authentication required', validationErrors: {} };
+  }
+
+  const rawName = formData.get('name') as string;
+  const rawPosition = formData.get('position') as string;
+  const rawBasePrice = formData.get('basePrice');
+  const basePrice = Number(rawBasePrice);
+
+  const validationErrors: AdSlotActionState['validationErrors'] = {};
+  if (!rawName || rawName.trim() === '') validationErrors.name = 'Slot name is required';
+  if (!rawPosition || rawPosition.trim() === '') validationErrors.position = 'Position is required';
+  if (!rawBasePrice || isNaN(basePrice) || basePrice <= 0) {
+    validationErrors.basePrice = 'Price must be a positive number';
+  }
+
+  if (Object.keys(validationErrors).length > 0) {
+    return { success: false, error: 'Please fix the validation errors', validationErrors };
+  }
 
   const data = {
     name: formData.get('name'),
